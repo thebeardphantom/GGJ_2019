@@ -1394,7 +1394,7 @@ MonoBehaviour:
     value: 1
   mode:
     overrideState: 1
-    value: 0
+    value: 1
   intensity:
     overrideState: 1
     value: 1
@@ -1403,7 +1403,7 @@ MonoBehaviour:
     value: {r: 0, g: 0, b: 0, a: 1}
   ambientOnly:
     overrideState: 1
-    value: 0
+    value: 1
   noiseFilterTolerance:
     overrideState: 1
     value: 0
@@ -1455,13 +1455,13 @@ MonoBehaviour:
     value: 8
   maximumMarchDistance:
     overrideState: 1
-    value: 1000
+    value: 100
   distanceFade:
-    overrideState: 0
-    value: 0.589
+    overrideState: 1
+    value: 0.25
   vignette:
     overrideState: 0
-    value: 0
+    value: 1
 --- !u!114 &114993868744633926
 MonoBehaviour:
   m_ObjectHideFlags: 3

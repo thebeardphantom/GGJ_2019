@@ -13,16 +13,23 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float _yOffset;
 
+    [SerializeField]
+    private float _velocityInterpolateSpeed;
+
     private RaycastHit? _lastValidNode;
+
     private Vector3 _lastPosition;
+
+    private Vector3 _velocity;
 
     #endregion
 
     #region Methods
 
     private static RaycastHit? FindNode(Vector3 raycastStart)
-    { 
+    {
         RaycastHit hit;
+        raycastStart.y = 500f;
         var mask = LayerMask.GetMask("LevelGeometry");
         var ray = new Ray(raycastStart, Vector3.down);
         if (Physics.Raycast(ray, out hit, 1000f, mask))
@@ -33,6 +40,19 @@ public class PlayerMovement : MonoBehaviour
 
         Debug.DrawLine(ray.origin, ray.GetPoint(1000f));
         return null;
+    }
+
+    public void LerpToPosition(Vector3 position)
+    {
+        position = CorrectPosition(position, true);
+        transform.DOMove(position, 3f).SetEase(Ease.InOutQuad);
+    }
+
+    public void Teleport(Vector3 position)
+    {
+        transform.position = CorrectPosition(position, false);
+        ResetVelocity();
+        _lastValidNode = FindNode(transform.position);
     }
 
     private void Awake()
@@ -62,15 +82,12 @@ public class PlayerMovement : MonoBehaviour
         StopAllCoroutines();
 
         var position = transform.position;
-        //position.x = Mathf.Round(position.x);
-        //position.y = Mathf.Round(position.y);
-        //position.z = Mathf.Round(position.z);
         var nextNode = FindNode(position);
         nextNode = nextNode ?? _lastValidNode;
         position = nextNode.Value.point;
         position.x = nextNode.Value.transform.position.x;
         position.z = nextNode.Value.transform.position.z;
-        position.y += _yOffset;
+        position = CorrectPosition(position, false);
         transform.DOMove(position, 0.25f).SetEase(Ease.OutQuad);
     }
 
@@ -108,8 +125,7 @@ public class PlayerMovement : MonoBehaviour
             if (newNode != null)
             {
                 _lastValidNode = newNode;
-                newPosition = newNode.Value.point;
-                newPosition.y += _yOffset;
+                newPosition = CorrectPosition(newNode.Value.point, false);
                 transform.position = newPosition;
             }
 
@@ -120,11 +136,33 @@ public class PlayerMovement : MonoBehaviour
     private void Update()
     {
         Shader.SetGlobalVector("_PlayerPosition", transform.position);
-        Shader.SetGlobalVector("_PlayerVelocity", transform.position - _lastPosition);
+
+        var targetVelocity = transform.position - _lastPosition;
         _lastPosition = transform.position;
+        _velocity = Vector3.Lerp(_velocity, targetVelocity, Time.deltaTime * _velocityInterpolateSpeed);
+        Shader.SetGlobalVector("_PlayerVelocity", _velocity);
+
         // TODO: Hook up diretional scaling?
         //Shader.SetGlobalVector("_PlayerLook", transform.forward);
-        if (!Application.isPlaying) { }
+        //if (!Application.isPlaying) { }
+    }
+
+    private void ResetVelocity()
+    {
+        _lastPosition = transform.position;
+        _velocity = Vector3.zero;
+    }
+
+    private Vector3 CorrectPosition(Vector3 position, bool raycast)
+    {
+        if (raycast)
+        {
+            var node = FindNode(position);
+            position = node.Value.point;
+        }
+
+        position.y += _yOffset;
+        return position;
     }
 
     #endregion
