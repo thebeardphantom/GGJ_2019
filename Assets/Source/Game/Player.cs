@@ -22,6 +22,7 @@ public class Player : MonoBehaviour
 
     public void Respawn()
     {
+        transform.localScale = Vector3.one;
         var respawnBlock = GameObject.FindWithTag("Respawn");
         var position = respawnBlock.transform.position;
         position.y = _respawnHeight;

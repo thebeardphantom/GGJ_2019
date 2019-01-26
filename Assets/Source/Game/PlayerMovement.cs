@@ -1,11 +1,28 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using DG.Tweening;
+using RSG;
 using UnityEngine;
 
 [ExecuteAlways]
 public class PlayerMovement : MonoBehaviour
 {
+    #region Types
+
+    public enum State
+    {
+        Idle,
+        PlayerControl,
+        ScriptControl,
+        SequenceControl
+    }
+
+    #endregion
+
     #region Fields
+
+    [NonSerialized]
+    public State PlayerState;
 
     [SerializeField]
     private float _speed;
@@ -42,17 +59,48 @@ public class PlayerMovement : MonoBehaviour
         return null;
     }
 
-    public void LerpToPosition(Vector3 position)
+    public IPromise LerpToPosition(Vector3 position)
     {
+        PlayerState = State.SequenceControl;
         position = CorrectPosition(position, true);
-        transform.DOMove(position, 3f).SetEase(Ease.InOutQuad);
+        DOTween.Kill(transform);
+        return transform.DOMove(position, 3f).SetEase(Ease.InOutQuad)
+            .ToPromise()
+            .Then(
+                tween =>
+                {
+                    PlayerState = State.Idle;
+                });
     }
 
     public void Teleport(Vector3 position)
     {
+        DOTween.Kill(transform);
         transform.position = CorrectPosition(position, false);
         ResetVelocity();
         _lastValidNode = FindNode(transform.position);
+    }
+
+    public void WaitForState(State state, Action onState)
+    {
+        if (PlayerState == state)
+        {
+            onState();
+        }
+        else
+        {
+            StartCoroutine(WaitForStateRoutine(state, onState));
+        }
+    }
+
+    private IEnumerator WaitForStateRoutine(State state, Action onState)
+    {
+        while (PlayerState != state)
+        {
+            yield return null;
+        }
+
+        onState();
     }
 
     private void Awake()
@@ -74,21 +122,37 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnArrowPressed(DirectionalArrow arrow)
     {
-        StartCoroutine(PressArrowRoutine(arrow));
+        if (PlayerState != State.SequenceControl)
+        {
+            DOTween.Kill(transform);
+            PlayerState = State.PlayerControl;
+            StartCoroutine(PressArrowRoutine(arrow));
+        }
     }
 
     private void OnArrowReleased(DirectionalArrow arrow)
     {
         StopAllCoroutines();
+        if (PlayerState == State.PlayerControl)
+        {
+            PlayerState = State.ScriptControl;
 
-        var position = transform.position;
-        var nextNode = FindNode(position);
-        nextNode = nextNode ?? _lastValidNode;
-        position = nextNode.Value.point;
-        position.x = nextNode.Value.transform.position.x;
-        position.z = nextNode.Value.transform.position.z;
-        position = CorrectPosition(position, false);
-        transform.DOMove(position, 0.25f).SetEase(Ease.OutQuad);
+            var position = transform.position;
+            var nextNode = FindNode(position);
+            nextNode = nextNode ?? _lastValidNode;
+            position = nextNode.Value.point;
+            position.x = nextNode.Value.transform.position.x;
+            position.z = nextNode.Value.transform.position.z;
+            position = CorrectPosition(position, false);
+            DOTween.Kill(transform);
+            transform.DOMove(position, 0.25f)
+                .SetEase(Ease.OutQuad)
+                .OnComplete(
+                    () =>
+                    {
+                        PlayerState = State.Idle;
+                    });
+        }
     }
 
     private IEnumerator PressArrowRoutine(DirectionalArrow arrow)
@@ -120,6 +184,11 @@ public class PlayerMovement : MonoBehaviour
 
         while (true)
         {
+            if (PlayerState != State.PlayerControl)
+            {
+                break;
+            }
+
             var newPosition = transform.position + move * Time.deltaTime * _speed;
             var newNode = FindNode(newPosition);
             if (newNode != null)
