@@ -19,11 +19,6 @@ public class Level1SequenceTrigger : PlayerTriggerVolume
     /// <inheritdoc />
     protected override void PlayerEnteredTriggerVolume()
     {
-        GameController.Instance.Player.Movement.WaitForState(PlayerMovement.State.Idle, BeginSequence);
-    }
-
-    private void BeginSequence()
-    {
         var player = GameController.Instance.Player;
         player.transform.DOScale(0f, 1f)
             .ToPromise()

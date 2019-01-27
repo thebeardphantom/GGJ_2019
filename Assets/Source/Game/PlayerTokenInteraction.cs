@@ -103,12 +103,17 @@ public class PlayerTokenInteraction : MonoBehaviour
     {
         foreach (var throne in GameController.Instance.Thrones)
         {
+            if (throne == null)
+            {
+                continue;
+            }
+
             if (throne.HasToken)
             {
                 return throne;
             }
 
-            if (Vector3.Distance(transform.position, throne.transform.position) < 2f)
+            if (Vector3.Distance(transform.position, throne.transform.position) <= 2f)
             {
                 return throne;
             }

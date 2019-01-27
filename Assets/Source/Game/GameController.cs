@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using System.IO;
+using DG.Tweening;
 using RSG;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
@@ -10,6 +11,9 @@ public class GameController : Singleton<GameController>
 
     [SerializeField]
     private Camera _uiCamera;
+
+    [SerializeField]
+    private Color[] _chapterColors;
 
     [SerializeField]
     private Player _player;
@@ -49,6 +53,17 @@ public class GameController : Singleton<GameController>
 
     #region Methods
 
+    private int GetChapter(int buildIndex)
+    {
+        if (buildIndex == SceneManager.sceneCountInBuildSettings - 1)
+        {
+            return _chapterColors.Length - 1;
+        }
+        var path = SceneUtility.GetScenePathByBuildIndex(buildIndex);
+        path = Path.GetFileNameWithoutExtension(path);
+        return int.Parse(path[0].ToString());
+    }
+
     public IPromise LoadMap(int level)
     {
         PlayerBeatLevel = false;
@@ -62,7 +77,7 @@ public class GameController : Singleton<GameController>
         }
 
         Thrones = new Throne[0];
-        TweenFaderColor(1f, 0.5f)
+        TweenFaderColor(level, 1f, 0.5f)
             .ToPromise()
             .Then(tween => Timer.WaitFor(0.5f))
             .Then(
@@ -93,7 +108,7 @@ public class GameController : Singleton<GameController>
                     _currentLevel = level;
                     var scene = SceneManager.GetSceneByBuildIndex(level);
                     PostSceneLoad(scene);
-                    TweenFaderColor(0f, 1f);
+                    TweenFaderColor(level, 0f, 1f);
                 });
         return returnPromise;
     }
@@ -147,10 +162,11 @@ public class GameController : Singleton<GameController>
         }
     }
 
-    private Tween TweenFaderColor(float alpha, float duration)
+    private Tween TweenFaderColor(int level, float alpha, float duration)
     {
         var fader = _vfxProfile.GetSetting<Fader>();
-        var startColor = fader.Color.value;
+        var startColor = _chapterColors[GetChapter(level)];
+        startColor.a = 1f - alpha;
         var endColor = startColor;
         endColor.a = alpha;
 

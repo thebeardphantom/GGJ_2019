@@ -25,8 +25,11 @@ public abstract class PlayerTriggerVolume : MonoBehaviour
         if (other.transform.IsChildOf(GameController.Instance.Player.transform))
         {
             var player = GameController.Instance.Player;
-            player.Movement.PlayerState = PlayerMovement.State.ScriptControl;
-            PlayerEnteredTriggerVolume();
+            player.Movement.WaitForState(PlayerMovement.State.Idle, () =>
+            {
+                player.Movement.PlayerState = PlayerMovement.State.ScriptControl;
+                PlayerEnteredTriggerVolume();
+            });
         }
     }
 

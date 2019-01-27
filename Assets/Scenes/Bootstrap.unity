@@ -1425,6 +1425,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _uiCamera: {fileID: 40434482}
+  _chapterColors:
+  - {r: 0.38431376, g: 0.5921569, b: 0.40000004, a: 1}
+  - {r: 0.38431376, g: 0.5921569, b: 0.40000004, a: 1}
+  - {r: 0.4431373, g: 0.427451, b: 0.59607846, a: 1}
+  - {r: 0.4431373, g: 0.427451, b: 0.59607846, a: 1}
   _player: {fileID: 753742190851039362}
   _vfxProfile: {fileID: 11400000, guid: 35f562a54d080af48bd9526823a969ac, type: 2}
   _timer: {fileID: 205218006}

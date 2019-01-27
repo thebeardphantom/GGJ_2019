@@ -63,10 +63,10 @@ Material:
     - _FalloffDistance: 175
     - _FalloffScale: 3
     - _GlossMapScale: 1
-    - _Glossiness: 0.691
+    - _Glossiness: 0.863
     - _GlossyReflections: 1
     - _MaxSize: 0.9
-    - _Metallic: 1
+    - _Metallic: 0.802
     - _MinSize: 0.3
     - _Mode: 0
     - _OcclusionStrength: 1
