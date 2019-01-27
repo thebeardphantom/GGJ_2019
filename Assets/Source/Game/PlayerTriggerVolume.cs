@@ -24,9 +24,11 @@ public abstract class PlayerTriggerVolume : MonoBehaviour
         }
         if (other.transform.IsChildOf(GameController.Instance.Player.transform))
         {
+            Debug.Log("Player entered win trigger");
             var player = GameController.Instance.Player;
             player.Movement.WaitForState(PlayerMovement.State.Idle, () =>
             {
+                player.transform.DOKill();
                 player.Movement.PlayerState = PlayerMovement.State.ScriptControl;
                 PlayerEnteredTriggerVolume();
             });

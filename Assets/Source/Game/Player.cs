@@ -33,6 +33,7 @@ public class Player : MonoBehaviour
         position.y = _respawnHeight;
         TokenInteraction.RetrieveToken(true);
         Movement.Teleport(position);
+        gameObject.SetActive(true);
         Movement.LerpToPosition(respawnBlock.transform.position);
     }
 

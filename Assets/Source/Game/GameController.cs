@@ -66,9 +66,10 @@ public class GameController : Singleton<GameController>
 
     public IPromise LoadMap(int level)
     {
-        PlayerBeatLevel = false;
+        Player.gameObject.SetActive(false);
         Player.TokenInteraction.RetrieveToken(true);
         Player.Movement.PlayerState = PlayerMovement.State.Idle;
+        SetTimerPlay(false);
         var returnPromise = new Promise();
 
         if (_currentLevel > 0)
@@ -105,6 +106,7 @@ public class GameController : Singleton<GameController>
             .Then(
                 loadOp =>
                 {
+                    PlayerBeatLevel = false;
                     _currentLevel = level;
                     var scene = SceneManager.GetSceneByBuildIndex(level);
                     PostSceneLoad(scene);
