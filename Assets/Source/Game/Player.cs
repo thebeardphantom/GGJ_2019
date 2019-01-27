@@ -31,6 +31,7 @@ public class Player : MonoBehaviour
         var respawnBlock = GameObject.FindWithTag("Respawn");
         var position = respawnBlock.transform.position;
         position.y = _respawnHeight;
+        TokenInteraction.RetrieveToken(true);
         Movement.Teleport(position);
         Movement.LerpToPosition(respawnBlock.transform.position);
     }

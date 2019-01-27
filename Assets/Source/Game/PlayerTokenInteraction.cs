@@ -74,16 +74,21 @@ public class PlayerTokenInteraction : MonoBehaviour
             {
                 return;
             }
+
             throne.AddRemoveToken(false);
         }
         else if (!HoldingToken)
         {
-            var throne = GetNearbyThrone();
-            if (throne.HasToken)
+            var throne = GameController.Instance.Thrones.FirstOrDefault(t => t.HasToken);
+            if (throne != null)
             {
                 throne.AddRemoveToken(false);
                 HoldingToken = true;
                 HoldingTokenChanged?.Invoke(true);
+                if (!throne.IsMoving)
+                {
+                    GameController.Instance.Player.Movement.TeleportToBlock(throne.TeleportBlock);
+                }
             }
         }
     }
@@ -98,6 +103,11 @@ public class PlayerTokenInteraction : MonoBehaviour
     {
         foreach (var throne in GameController.Instance.Thrones)
         {
+            if (throne.HasToken)
+            {
+                return throne;
+            }
+
             if (Vector3.Distance(transform.position, throne.transform.position) < 2f)
             {
                 return throne;

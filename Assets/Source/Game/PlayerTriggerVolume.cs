@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections;
+using DG.Tweening;
+using UnityEngine;
 
 public abstract class PlayerTriggerVolume : MonoBehaviour
 {
@@ -15,8 +18,14 @@ public abstract class PlayerTriggerVolume : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (GameController.Instance.PlayerBeatLevel)
+        {
+            return;
+        }
         if (other.transform.IsChildOf(GameController.Instance.Player.transform))
         {
+            var player = GameController.Instance.Player;
+            player.Movement.PlayerState = PlayerMovement.State.ScriptControl;
             PlayerEnteredTriggerVolume();
         }
     }

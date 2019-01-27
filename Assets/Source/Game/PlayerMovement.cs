@@ -12,8 +12,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Idle,
         PlayerControl,
-        ScriptControl,
-        SequenceControl
+        ScriptControl
     }
 
     #endregion
@@ -42,6 +41,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _apparentVelocity;
 
     private Vector3 _targetPosition;
+    private Coroutine _arrowRoutine;
 
     #endregion
 
@@ -49,9 +49,8 @@ public class PlayerMovement : MonoBehaviour
 
     public IPromise LerpToPosition(Vector3 position)
     {
-        PlayerState = State.SequenceControl;
+        PlayerState = State.ScriptControl;
         position = CorrectPosition(position, true);
-        DOTween.Kill(transform);
         return transform.DOMove(position, 3f)
             .SetEase(Ease.InOutQuad)
             .ToPromise()
@@ -65,7 +64,6 @@ public class PlayerMovement : MonoBehaviour
 
     public void Teleport(Vector3 position)
     {
-        DOTween.Kill(transform);
         _targetPosition = CorrectPosition(position, false);
         transform.position = _targetPosition;
         ResetVelocity();
@@ -82,6 +80,18 @@ public class PlayerMovement : MonoBehaviour
         {
             StartCoroutine(WaitForStateRoutine(state, onState));
         }
+    }
+
+    public void TeleportToBlock(Block block)
+    {
+        transform.DOScale(0f, 0.125f)
+            .ToUntypedPromise()
+            .Then(
+                () =>
+                {
+                    Teleport(block.Anchor.position);
+                    transform.DOScale(1f, 0.125f);
+                });
     }
 
     private NodeHit FindNode(Vector3 raycastStart)
@@ -133,17 +143,20 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnArrowPressed(DirectionalArrow arrow)
     {
-        if (PlayerState != State.SequenceControl)
+        if (PlayerState != State.ScriptControl)
         {
-            DOTween.Kill(transform);
             PlayerState = State.PlayerControl;
-            StartCoroutine(PressArrowRoutine(arrow));
+            _arrowRoutine = StartCoroutine(PressArrowRoutine(arrow));
         }
     }
 
     private void OnArrowReleased(DirectionalArrow arrow)
     {
-        StopAllCoroutines();
+        if(_arrowRoutine != null)
+        {
+            StopCoroutine(_arrowRoutine);
+            _arrowRoutine = null;
+        }
         if (PlayerState == State.PlayerControl)
         {
             var position = transform.position;
@@ -151,7 +164,6 @@ public class PlayerMovement : MonoBehaviour
             nextNode = nextNode ?? _lastValidNode;
             position = nextNode.Anchor;
             position = CorrectPosition(position, false);
-            DOTween.Kill(transform);
             _targetPosition = position;
             PlayerState = State.Idle;
         }
@@ -213,7 +225,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Shader.SetGlobalVector("_PlayerPosition", transform.position);
 
-        if (PlayerState != State.SequenceControl)
+        if (PlayerState != State.ScriptControl)
         {
             transform.position = Vector3.Lerp(
                 transform.position,
@@ -226,6 +238,11 @@ public class PlayerMovement : MonoBehaviour
         Shader.SetGlobalVector("_PlayerVelocity", _apparentVelocity);
 
         _lastPosition = transform.position;
+
+        if (_lastValidNode != null && _lastValidNode.Block.IsOff)
+        {
+            GameController.Instance.Player.Respawn();
+        }
     }
 
     private void ResetVelocity()
@@ -251,16 +268,30 @@ public class PlayerMovement : MonoBehaviour
 
 public class NodeHit
 {
+    #region Fields
+
     public Transform Node;
 
     public Vector3 Hit;
 
     public Vector3 Anchor;
 
+    public Block Block;
+
+    #endregion
+
     public NodeHit(RaycastHit hit)
     {
         Hit = hit.point;
         Node = hit.transform;
-        Anchor = hit.transform.GetChild(0).position;
+        Block = hit.transform.GetComponent<Block>();
+        if (Block == null)
+        {
+            Debug.LogError($"{hit.transform.name} has no block!");
+        }
+        else
+        {
+            Anchor = Block.Anchor.position;
+        }
     }
 }

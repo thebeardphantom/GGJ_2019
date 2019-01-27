@@ -39,12 +39,11 @@ public class GameController : Singleton<GameController>
 
     public PromiseTimer Timer { get; } = new PromiseTimer();
 
+    public bool PlayerBeatLevel { get; set; }
+
     public Player Player => _player;
 
-    public Camera UICamera
-    {
-        get { return _uiCamera; }
-    }
+    public Camera UICamera => _uiCamera;
 
     #endregion
 
@@ -52,13 +51,16 @@ public class GameController : Singleton<GameController>
 
     public IPromise LoadMap(int level)
     {
+        PlayerBeatLevel = false;
         Player.TokenInteraction.RetrieveToken(true);
+        Player.Movement.PlayerState = PlayerMovement.State.Idle;
         var returnPromise = new Promise();
 
-        if(_currentLevel > 0)
+        if (_currentLevel > 0)
         {
             _levelComplete.Play();
         }
+
         Thrones = new Throne[0];
         TweenFaderColor(1f, 0.5f)
             .ToPromise()
@@ -108,7 +110,7 @@ public class GameController : Singleton<GameController>
             _timerStart.Play();
             _timer.Play();
         }
-        else if(_timer.isPlaying)
+        else if (_timer.isPlaying)
         {
             _timer.Stop();
             _timerStop.Play();
