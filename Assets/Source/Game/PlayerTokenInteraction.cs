@@ -67,10 +67,14 @@ public class PlayerTokenInteraction : MonoBehaviour
     {
         if (force)
         {
-            var throne = GameController.Instance.Thrones.FirstOrDefault(t => t.HasToken);
-            throne.AddRemoveToken(false);
             HoldingToken = true;
             HoldingTokenChanged?.Invoke(true);
+            var throne = GameController.Instance.Thrones.FirstOrDefault(t => t.HasToken);
+            if (throne == null)
+            {
+                return;
+            }
+            throne.AddRemoveToken(false);
         }
         else if (!HoldingToken)
         {

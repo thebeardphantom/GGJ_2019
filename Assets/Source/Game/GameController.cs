@@ -9,10 +9,25 @@ public class GameController : Singleton<GameController>
     #region Fields
 
     [SerializeField]
+    private Camera _uiCamera;
+
+    [SerializeField]
     private Player _player;
 
     [SerializeField]
     private PostProcessProfile _vfxProfile;
+
+    [SerializeField]
+    private AudioSource _timer;
+
+    [SerializeField]
+    private AudioSource _timerStop;
+
+    [SerializeField]
+    private AudioSource _timerStart;
+
+    [SerializeField]
+    private AudioSource _levelComplete;
 
     private int _currentLevel;
 
@@ -26,13 +41,25 @@ public class GameController : Singleton<GameController>
 
     public Player Player => _player;
 
+    public Camera UICamera
+    {
+        get { return _uiCamera; }
+    }
+
     #endregion
 
     #region Methods
 
     public IPromise LoadMap(int level)
     {
+        Player.TokenInteraction.RetrieveToken(true);
         var returnPromise = new Promise();
+
+        if(_currentLevel > 0)
+        {
+            _levelComplete.Play();
+        }
+        Thrones = new Throne[0];
         TweenFaderColor(1f, 0.5f)
             .ToPromise()
             .Then(tween => Timer.WaitFor(0.5f))
@@ -74,6 +101,20 @@ public class GameController : Singleton<GameController>
         return LoadMap(_currentLevel + 1);
     }
 
+    public void SetTimerPlay(bool isPlaying)
+    {
+        if (isPlaying)
+        {
+            _timerStart.Play();
+            _timer.Play();
+        }
+        else if(_timer.isPlaying)
+        {
+            _timer.Stop();
+            _timerStop.Play();
+        }
+    }
+
     private void GetCurrentChapterLevel(out int chapter, out int level)
     {
         chapter = -1;
@@ -97,7 +138,7 @@ public class GameController : Singleton<GameController>
             Thrones = FindObjectsOfType<Throne>();
             Player.Respawn();
             GetCurrentChapterLevel(out var chapter, out var level);
-            if(chapter > 1 || level > 1)
+            if (chapter > 1 || level > 1)
             {
                 Player.TokenInteraction.SetUnlockedToken();
             }

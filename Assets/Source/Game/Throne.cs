@@ -41,6 +41,7 @@ public class Throne : MonoBehaviour
 
     public void AddRemoveToken(bool add)
     {
+        GameController.Instance.SetTimerPlay(false);
         StopAllCoroutines();
         HasToken = add;
         _token.transform.DOKill();
@@ -54,7 +55,9 @@ public class Throne : MonoBehaviour
 
     private IEnumerator TokenTimer()
     {
+        GameController.Instance.SetTimerPlay(true);
         yield return new WaitForSeconds(_timer);
+        GameController.Instance.SetTimerPlay(false);
         GameController.Instance.Player.TokenInteraction.RetrieveToken(true);
     }
 
