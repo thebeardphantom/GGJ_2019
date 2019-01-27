@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 public class PlayerTokenInteraction : MonoBehaviour
 {
@@ -34,12 +35,12 @@ public class PlayerTokenInteraction : MonoBehaviour
 
     #region Methods
 
-    public void SetHasToken(bool hasToken)
+    public void SetUnlockedToken()
     {
-        UnlockedToken = hasToken;
+        UnlockedToken = true;
+        TokenUnlocked?.Invoke();
         HoldingToken = true;
         HoldingTokenChanged?.Invoke(true);
-        TokenUnlocked?.Invoke();
     }
 
     public void SetCanUseToken(bool canUseToken)
@@ -62,9 +63,16 @@ public class PlayerTokenInteraction : MonoBehaviour
         }
     }
 
-    public void RetrieveToken()
+    public void RetrieveToken(bool force)
     {
-        if (!HoldingToken)
+        if (force)
+        {
+            var throne = GameController.Instance.Thrones.FirstOrDefault(t => t.HasToken);
+            throne.AddRemoveToken(false);
+            HoldingToken = true;
+            HoldingTokenChanged?.Invoke(true);
+        }
+        else if (!HoldingToken)
         {
             var throne = GetNearbyThrone();
             if (throne.HasToken)

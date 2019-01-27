@@ -42,7 +42,7 @@ public class Level1SequenceTrigger : PlayerTriggerVolume
             .Then(
                 tween =>
                 {
-                    GameController.Instance.Player.TokenInteraction.SetHasToken(true);
+                    GameController.Instance.Player.TokenInteraction.SetUnlockedToken();
                     return GameController.Instance.LoadNextMap();
                 })
             .Done();

@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 
 public class Throne : MonoBehaviour
@@ -20,6 +21,9 @@ public class Throne : MonoBehaviour
     [SerializeField]
     private GameObject _token;
 
+    [SerializeField]
+    private float _timer;
+
     #endregion
 
     #region Properties
@@ -37,9 +41,21 @@ public class Throne : MonoBehaviour
 
     public void AddRemoveToken(bool add)
     {
+        StopAllCoroutines();
         HasToken = add;
         _token.transform.DOKill();
         _token.transform.DOScale(add ? 0.25f : 0f, 0.5f);
+        TokenAddRemove?.Invoke(add);
+        if (add && _timer > 0f)
+        {
+            StartCoroutine(TokenTimer());
+        }
+    }
+
+    private IEnumerator TokenTimer()
+    {
+        yield return new WaitForSeconds(_timer);
+        GameController.Instance.Player.TokenInteraction.RetrieveToken(true);
     }
 
     #endregion

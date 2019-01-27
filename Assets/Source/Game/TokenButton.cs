@@ -17,7 +17,7 @@ public class TokenButton : MonoBehaviour, IPointerClickHandler
             }
             else
             {
-                player.TokenInteraction.RetrieveToken();
+                player.TokenInteraction.RetrieveToken(false);
             }
         }
     }

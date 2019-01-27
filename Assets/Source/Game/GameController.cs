@@ -14,13 +14,13 @@ public class GameController : Singleton<GameController>
     [SerializeField]
     private PostProcessProfile _vfxProfile;
 
+    private int _currentLevel;
+
     #endregion
 
     #region Properties
 
     public Throne[] Thrones { get; private set; } = new Throne[0];
-
-    public int CurrentLevel;
 
     public PromiseTimer Timer { get; } = new PromiseTimer();
 
@@ -29,11 +29,6 @@ public class GameController : Singleton<GameController>
     #endregion
 
     #region Methods
-
-    private static int GetMapBuildIndex(int chapter, int level)
-    {
-        return SceneUtility.GetBuildIndexByScenePath($"Assets/Scenes/Maps/{chapter}-{level}.unity");
-    }
 
     public IPromise LoadMap(int level)
     {
@@ -46,9 +41,9 @@ public class GameController : Singleton<GameController>
                 {
                     SceneManager.MoveGameObjectToScene(Player.gameObject, gameObject.scene);
                     AsyncOperation unloadOp = null;
-                    if (CurrentLevel >= 1)
+                    if (_currentLevel >= 1)
                     {
-                        unloadOp = SceneManager.UnloadSceneAsync(CurrentLevel);
+                        unloadOp = SceneManager.UnloadSceneAsync(_currentLevel);
                     }
 
                     var loadOp = SceneManager.LoadSceneAsync(level, LoadSceneMode.Additive);
@@ -66,20 +61,34 @@ public class GameController : Singleton<GameController>
             .Then(
                 loadOp =>
                 {
+                    _currentLevel = level;
                     var scene = SceneManager.GetSceneByBuildIndex(level);
-                    PostSceneLoad(scene, LoadSceneMode.Additive);
+                    PostSceneLoad(scene);
                     TweenFaderColor(0f, 1f);
-                    CurrentLevel = level;
                 });
         return returnPromise;
     }
 
     public IPromise LoadNextMap()
     {
-        return LoadMap(CurrentLevel + 1);
+        return LoadMap(_currentLevel + 1);
     }
 
-    private void PostSceneLoad(Scene scene, LoadSceneMode loadSceneMode)
+    private void GetCurrentChapterLevel(out int chapter, out int level)
+    {
+        chapter = -1;
+        level = -1;
+
+        var scene = SceneManager.GetSceneByBuildIndex(_currentLevel);
+        if (scene.name.Contains("-"))
+        {
+            var split = scene.name.Split('-');
+            chapter = int.Parse(split[0]);
+            level = int.Parse(split[1]);
+        }
+    }
+
+    private void PostSceneLoad(Scene scene)
     {
         if (scene.buildIndex > 0)
         {
@@ -87,6 +96,11 @@ public class GameController : Singleton<GameController>
             SceneManager.MoveGameObjectToScene(Player.gameObject, scene);
             Thrones = FindObjectsOfType<Throne>();
             Player.Respawn();
+            GetCurrentChapterLevel(out var chapter, out var level);
+            if(chapter > 1 || level > 1)
+            {
+                Player.TokenInteraction.SetUnlockedToken();
+            }
         }
     }
 
@@ -113,7 +127,6 @@ public class GameController : Singleton<GameController>
 
     private void Awake()
     {
-        SceneManager.sceneLoaded += PostSceneLoad;
         LoadNextMap().Done();
         Shader.SetGlobalInt("_PlayMode", 1);
     }

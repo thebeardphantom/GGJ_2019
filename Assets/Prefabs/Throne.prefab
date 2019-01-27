@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _token: {fileID: 6320142076522579326}
+  _timer: 0
 --- !u!1 &5811479603073238919
 GameObject:
   m_ObjectHideFlags: 0
