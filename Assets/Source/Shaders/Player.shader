@@ -35,6 +35,7 @@ Shader "Custom/Player"
         fixed4 _Color;
 		float _VelocityScale;
 		uniform float3 _PlayerVelocity;
+		uniform int _PlayMode;
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
         // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
@@ -56,7 +57,7 @@ Shader "Custom/Player"
 			float3 velocityNormalized = any(_PlayerVelocity) ? normalize(_PlayerVelocity) : 0.0;
 			float vertDot = dot(vertDir, velocityNormalized);
 			vertDot = 1.0 - Remap(vertDot, -1.0, 1.0, 0.0, 1.0);
-			v.vertex.xyz -= _PlayerVelocity * _VelocityScale * vertDot;
+			v.vertex.xyz -= _PlayerVelocity * _VelocityScale * vertDot * _PlayMode;
 		}
 
         void surf (Input IN, inout SurfaceOutputStandard o)

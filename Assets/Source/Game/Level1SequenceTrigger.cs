@@ -39,7 +39,12 @@ public class Level1SequenceTrigger : PlayerTriggerVolume
                     return Promise.All(moveTween, rotateTween, lightTween);
                 })
             .Then(() => _token.DOScale(20f, 3f).ToPromise())
-            .Then(tween => GameController.Instance.LoadNextMap())
+            .Then(
+                tween =>
+                {
+                    GameController.Instance.Player.TokenInteraction.SetHasToken(true);
+                    return GameController.Instance.LoadNextMap();
+                })
             .Done();
     }
 

@@ -8,6 +8,9 @@ public class Player : MonoBehaviour
     private PlayerMovement _movement;
 
     [SerializeField]
+    private PlayerTokenInteraction _tokenInteraction;
+
+    [SerializeField]
     private float _respawnHeight;
 
     #endregion
@@ -15,6 +18,8 @@ public class Player : MonoBehaviour
     #region Properties
 
     public PlayerMovement Movement => _movement;
+
+    public PlayerTokenInteraction TokenInteraction => _tokenInteraction;
 
     #endregion
 

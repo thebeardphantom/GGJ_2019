@@ -18,9 +18,9 @@ public class GameController : Singleton<GameController>
 
     #region Properties
 
-    public int CurrentChapter { get; private set; } = -1;
+    public Throne[] Thrones { get; private set; } = new Throne[0];
 
-    public int CurrentLevel { get; private set; } = -1;
+    public int CurrentLevel;
 
     public PromiseTimer Timer { get; } = new PromiseTimer();
 
@@ -35,10 +35,9 @@ public class GameController : Singleton<GameController>
         return SceneUtility.GetBuildIndexByScenePath($"Assets/Scenes/Maps/{chapter}-{level}.unity");
     }
 
-    public IPromise LoadMap(int chapter, int level)
+    public IPromise LoadMap(int level)
     {
         var returnPromise = new Promise();
-        var loadIndex = GetMapBuildIndex(chapter, level);
         TweenFaderColor(1f, 0.5f)
             .ToPromise()
             .Then(tween => Timer.WaitFor(0.5f))
@@ -47,13 +46,12 @@ public class GameController : Singleton<GameController>
                 {
                     SceneManager.MoveGameObjectToScene(Player.gameObject, gameObject.scene);
                     AsyncOperation unloadOp = null;
-                    if (CurrentChapter >= 0 && CurrentLevel >= 0)
+                    if (CurrentLevel >= 1)
                     {
-                        var unloadIndex = GetMapBuildIndex(CurrentChapter, CurrentLevel);
-                        unloadOp = SceneManager.UnloadSceneAsync(unloadIndex);
+                        unloadOp = SceneManager.UnloadSceneAsync(CurrentLevel);
                     }
 
-                    var loadOp = SceneManager.LoadSceneAsync(loadIndex, LoadSceneMode.Additive);
+                    var loadOp = SceneManager.LoadSceneAsync(level, LoadSceneMode.Additive);
                     if (unloadOp != null)
                     {
                         loadOp.allowSceneActivation = false;
@@ -68,12 +66,9 @@ public class GameController : Singleton<GameController>
             .Then(
                 loadOp =>
                 {
-                    var scene = SceneManager.GetSceneByBuildIndex(loadIndex);
-                    SceneManager.SetActiveScene(scene);
-                    SceneManager.MoveGameObjectToScene(Player.gameObject, scene);
+                    var scene = SceneManager.GetSceneByBuildIndex(level);
+                    PostSceneLoad(scene, LoadSceneMode.Additive);
                     TweenFaderColor(0f, 1f);
-                    Player.Respawn();
-                    CurrentChapter = chapter;
                     CurrentLevel = level;
                 });
         return returnPromise;
@@ -81,16 +76,18 @@ public class GameController : Singleton<GameController>
 
     public IPromise LoadNextMap()
     {
-        var nextChapter = CurrentChapter;
-        var nextLevel = CurrentLevel + 1;
-        var sceneIndex = GetMapBuildIndex(nextChapter, nextLevel);
-        if (sceneIndex < 0)
-        {
-            nextChapter = CurrentChapter + 1;
-            nextLevel = 1;
-        }
+        return LoadMap(CurrentLevel + 1);
+    }
 
-        return LoadMap(nextChapter, nextLevel);
+    private void PostSceneLoad(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        if (scene.buildIndex > 0)
+        {
+            SceneManager.SetActiveScene(scene);
+            SceneManager.MoveGameObjectToScene(Player.gameObject, scene);
+            Thrones = FindObjectsOfType<Throne>();
+            Player.Respawn();
+        }
     }
 
     private Tween TweenFaderColor(float alpha, float duration)
@@ -116,7 +113,14 @@ public class GameController : Singleton<GameController>
 
     private void Awake()
     {
-        LoadMap(1, 1);
+        SceneManager.sceneLoaded += PostSceneLoad;
+        LoadNextMap().Done();
+        Shader.SetGlobalInt("_PlayMode", 1);
+    }
+
+    private void OnApplicationQuit()
+    {
+        Shader.SetGlobalInt("_PlayMode", 0);
     }
 
     private void Update()

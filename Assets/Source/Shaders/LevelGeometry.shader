@@ -40,6 +40,7 @@
 		float _FalloffScale;
 		uniform float3 _PlayerPosition;
 		uniform float3 _PlayerLook;
+		uniform int _PlayMode;
 
 		// Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
 		// See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
@@ -62,12 +63,9 @@
 			float scaleInterpolant = 1.0 - saturate(dist / _FalloffDistance);
 			float3 dirToPlayer = normalize(worldPos - _PlayerPosition);
 			
-			// TODO: Hook up directional scaling?
-			float dirDot = 1.0;
-			//float dirDot = dot(_PlayerLook, dirToPlayer);
-			//dirDot = Remap(dirDot, -1.0, 1.0, 0.0, 1.0);
-			//dirDot = pow(dirDot, 0.5);
-			v.vertex *= lerp(_MinSize, _MaxSize, scaleInterpolant * dirDot);
+			// Default to max size if not in play mode
+			scaleInterpolant = lerp(scaleInterpolant, 1.0, 1 - _PlayMode);
+			v.vertex *= lerp(_MinSize, _MaxSize, scaleInterpolant);
 		}
 
 		void surf (Input IN, inout SurfaceOutputStandard o)
