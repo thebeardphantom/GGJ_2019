@@ -3,6 +3,7 @@ using System.Collections;
 using DG.Tweening;
 using RSG;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -34,6 +35,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float _moveInterpolateSpeed;
 
+    [SerializeField]
+    private AudioMixer _mixer;
+
     private NodeHit _lastValidNode;
 
     private Vector3 _lastPosition;
@@ -42,6 +46,7 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector3 _targetPosition;
     private Coroutine _arrowRoutine;
+    private float _targetPianoVolume = -80f;
 
     #endregion
 
@@ -244,6 +249,10 @@ public class PlayerMovement : MonoBehaviour
         Shader.SetGlobalVector("_PlayerVelocity", _apparentVelocity);
 
         _lastPosition = transform.position;
+
+        var isMoving = targetVelocity.sqrMagnitude > 0f && PlayerState != State.ScriptControl;
+        _targetPianoVolume = Mathf.Lerp(_targetPianoVolume, isMoving ? -12f : -25f, isMoving ? Time.deltaTime : Time.deltaTime * 0.5f);
+        _mixer.SetFloat("PianoVolume", _targetPianoVolume);
 
         if (_lastValidNode != null && _lastValidNode.Block.IsOff)
         {
