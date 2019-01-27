@@ -47,12 +47,14 @@ public class PlayerMovement : MonoBehaviour
 
     #region Methods
 
-    public IPromise LerpToPosition(Vector3 position)
+    public IPromise LerpToPosition(Vector3 position, float speed = 3f, bool speedBased = false, bool ignoreHeightCheck = false)
     {
         PlayerState = State.ScriptControl;
-        position = CorrectPosition(position, true);
-        return transform.DOMove(position, 3f)
+        position = CorrectPosition(position, true, ignoreHeightCheck);
+        return transform.DOMove(position, speed)
+            .SetSpeedBased(speedBased)
             .SetEase(Ease.InOutQuad)
+            .SetUpdate(true)
             .ToPromise()
             .Then(
                 tween =>
@@ -84,17 +86,20 @@ public class PlayerMovement : MonoBehaviour
 
     public void TeleportToBlock(Block block)
     {
-        transform.DOScale(0f, 0.125f)
+        Time.timeScale = 0f;
+        transform.DOScale(0.25f, 0.125f)
+            .SetUpdate(true)
             .ToUntypedPromise()
-            .Then(
+            .Then(() => LerpToPosition(block.Anchor.position, 10f, true, true))
+            .Then(() => transform.DOScale(1f, 0.125f))
+            .Done(
                 () =>
                 {
-                    Teleport(block.Anchor.position);
-                    transform.DOScale(1f, 0.125f);
+                    Time.timeScale = 1f;
                 });
     }
 
-    private NodeHit FindNode(Vector3 raycastStart)
+    private NodeHit FindNode(Vector3 raycastStart, bool ignoreHeightCheck = false)
     {
         var startY = transform.position.y;
         raycastStart.y += 500f;
@@ -103,7 +108,7 @@ public class PlayerMovement : MonoBehaviour
         var hits = Physics.RaycastAll(ray, 1000f, mask);
         foreach (var hit in hits)
         {
-            if (hit.point.y <= startY)
+            if (ignoreHeightCheck || hit.point.y <= startY)
             {
                 Debug.DrawLine(ray.origin, hit.point);
                 return new NodeHit(hit);
@@ -152,11 +157,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnArrowReleased(DirectionalArrow arrow)
     {
-        if(_arrowRoutine != null)
+        if (_arrowRoutine != null)
         {
             StopCoroutine(_arrowRoutine);
             _arrowRoutine = null;
         }
+
         if (PlayerState == State.PlayerControl)
         {
             var position = transform.position;
@@ -251,11 +257,11 @@ public class PlayerMovement : MonoBehaviour
         _apparentVelocity = Vector3.zero;
     }
 
-    private Vector3 CorrectPosition(Vector3 position, bool raycast)
+    private Vector3 CorrectPosition(Vector3 position, bool raycast, bool ignoreHeightCheck = false)
     {
         if (raycast)
         {
-            var node = FindNode(position);
+            var node = FindNode(position, ignoreHeightCheck);
             position = node.Anchor;
         }
 

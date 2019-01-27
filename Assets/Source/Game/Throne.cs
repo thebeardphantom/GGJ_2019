@@ -31,9 +31,13 @@ public class Throne : MonoBehaviour
     private float _timer;
 
     [SerializeField]
+    private bool _onlyMoveOnActivate;
+
+    [SerializeField]
     private Transform _endPosition;
 
     private Coroutine _timerRoutine;
+    private Coroutine _moveRoutine;
 
     #endregion
 
@@ -66,33 +70,45 @@ public class Throne : MonoBehaviour
 
     public void AddRemoveToken(bool add)
     {
-        GameController.Instance.SetTimerPlay(false);
-        if (_timerRoutine != null)
+        if(!add && !_onlyMoveOnActivate)
+        {
+            GameController.Instance.SetTimerPlay(false);
+        }
+        if (!_onlyMoveOnActivate && _timerRoutine != null)
         {
             StopCoroutine(_timerRoutine);
         }
-        HasToken = add;
-        _token.transform.DOKill();
-        _token.transform.DOScale(add ? 0.25f : 0f, 0.5f);
-        TokenAddRemove?.Invoke(add);
+        if(!_onlyMoveOnActivate || _moveRoutine == null)
+        {
+            HasToken = add;
+            _token.transform.DOKill();
+            _token.transform.DOScale(add ? 0.25f : 0f, 0.5f);
+            TokenAddRemove?.Invoke(add);
+        }
         if (add && _timer > 0f)
         {
             _timerRoutine = StartCoroutine(TokenTimer());
+        }
+
+        if (add && _onlyMoveOnActivate)
+        {
+            _moveRoutine = StartCoroutine(MoveLoop());
         }
     }
 
     private void Awake()
     {
         _token.transform.localScale = Vector3.zero;
-        if (_endPosition != null)
+        if (_endPosition != null && !_onlyMoveOnActivate)
         {
-            StartCoroutine(MoveLoop());
+            _moveRoutine = StartCoroutine(MoveLoop());
         }
     }
 
     private void OnDisable()
     {
         StopAllCoroutines();
+        _moveRoutine = null;
     }
 
     private IEnumerator MoveLoop()
@@ -100,7 +116,10 @@ public class Throne : MonoBehaviour
         var home = transform.position;
         while (true)
         {
-            yield return new WaitForSeconds(3f);
+            if(!_onlyMoveOnActivate)
+            {
+                yield return new WaitForSeconds(3f);
+            }
             IsMoving = true;
             yield return transform.DOMove(_endPosition.position, 5f).SetSpeedBased().WaitForCompletion();
             IsMoving = false;
@@ -108,7 +127,18 @@ public class Throne : MonoBehaviour
             IsMoving = true;
             yield return transform.DOMove(home, 5f).SetSpeedBased().WaitForCompletion();
             IsMoving = false;
+            if (_onlyMoveOnActivate)
+            {
+                HasToken = false;
+                _token.transform.DOKill();
+                _token.transform.DOScale(0f, 0.5f);
+                TokenAddRemove?.Invoke(false);
+                GameController.Instance.SetTimerPlay(false);
+                break;
+            }
         }
+
+        _moveRoutine = null;
     }
 
     private IEnumerator TokenTimer()

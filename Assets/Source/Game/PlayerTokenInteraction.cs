@@ -79,7 +79,7 @@ public class PlayerTokenInteraction : MonoBehaviour
         }
         else if (!HoldingToken)
         {
-            var throne = GameController.Instance.Thrones.FirstOrDefault(t => t.HasToken);
+            var throne = GameController.Instance.Thrones.FirstOrDefault(t => t.HasToken && !t.IsMoving);
             if (throne != null)
             {
                 throne.AddRemoveToken(false);
@@ -108,7 +108,7 @@ public class PlayerTokenInteraction : MonoBehaviour
                 continue;
             }
 
-            if (throne.HasToken)
+            if (throne.HasToken && !throne.IsMoving)
             {
                 return throne;
             }
